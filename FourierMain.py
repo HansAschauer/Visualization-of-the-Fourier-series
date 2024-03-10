@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import numpy as np
 import matplotlib.animation as animation # to save the "animation object"
 
+import argparse, os
 
 ### My own imports ###
 from integral_solver import IS # solve the integrals
@@ -109,19 +110,95 @@ def get_desmos_string(coeff, ind): # returns 2D vector with sin and cos-funcs to
     # just makes the string a bit nicer (I know, the following line does not contain nice Code lol)
     return f"({real_string} , {imag_string})".replace(" ", "")#.replace("       ", "").replace("     ", "").replace("    ", "").replace("   ", "").replace("  ", "")
 
+def get_latex_string(coeff, ind): # returns 2D vector with sin and cos-funcs to copy into desmos
+    def num_f(number, sign=False):
+        if sign:
+            return "{:+.5f}".format(number).rstrip('0').rstrip('.')
+        else:
+            return "{:.5f}".format(number).rstrip('0').rstrip('.')
+    
+    real_string = ""
+    imag_string = ""
+    
+    threshold = 1e-5
+    for c, k in zip(coeff, ind):
+        #print(num_f(c.real, sign=True))
+        if np.abs(c.real) > threshold:
+            real_string += f"{num_f(c.real, sign=True)}\\cos({2*k}\\pi t) "
+            
+            imag_string += f"{num_f(-c.real, sign=True)}\\sin({2*k}\\pi t) "
+        if np.abs(c.imag) > threshold:
+            real_string += f"{num_f(-c.imag, sign=True)}\\sin({2*k}\\pi t) "
+            
+            imag_string += f"{num_f(-c.imag, sign=True)}\\cos({2*k}\\pi t) " # negative sign to "flip" imaginary part (why ever this is necessary)
+            
+    
+    #print(real_string)
+    # just makes the string a bit nicer (I know, the following line does not contain nice Code lol)
+    #return f"x(t) = {real_string} \ny(t) = {imag_string})"
+    return f"""
+%\\usepackage{{mathtools}}
+%\\usepackage{{amsmath}}
+
+\\begin{{flushleft}}
+\\linespread{{2.5}}\\selectfont
+\\leftskip=3em
+\\hspace*{{-3em}}$\\displaystyle
+x(t) = {real_string}
+$
+\\end{{flushleft}}
+\\begin{{flushleft}}
+\\linespread{{2.5}}\\selectfont
+\\leftskip=3em
+\\hspace*{{-3em}}$\\displaystyle
+y(t) = {imag_string}
+$
+\\end{{flushleft}}
+"""
+
+# code output function registry
+code_output = {
+    "latex-coefficients": get_fourier_latex, 
+    "desmos-formula": get_desmos_string, 
+    "latex-formula": get_latex_string
+}
+
 def main():    
     
+    # Command line parser
+    p = argparse.ArgumentParser()
+    p.add_argument("--fourier-coefficients", "-n", type=int, default=30,
+                   help="Number of fourier coefficients, will calculate from k=-N up to k=N.")
+    p.add_argument("--save-video", "-v", default=False, action="store_true",
+                   help="if provided,  save animation as a video (might take some time)")
+    p.add_argument("--calculate-only", "-c", default=False, action="store_true",
+                   help="Do not show the animation. This is way faster if you just want for example the desmos equation")
+    p.add_argument("--simple-plot", "-s", default=False, action="store_true",
+                   help="Do not calculate the animation (for 'fast' testing)")
+    p.add_argument("--plot-reverse", "-r", action="store_true",default=False, 
+                   help="Animates the picture in reverse (for example if you have a text)")
+    p.add_argument("--coefficients-output", action="append", choices=code_output.keys(),
+                   default=[],
+                   help="Output coefficients or formula in provided format to stdandard output. Can be privided multiple times.")
+    p.add_argument("--mp4-filename", help="Filname for generated animation (if -v is provided). Defaults to input filename with .mp4 appended.")
+    p.add_argument("svg_filename", help="Name of the SVG file")
+    args = p.parse_args()
+    if args.mp4_filename is None:
+        mp4_filename = f"{os.path.splitext(args.svg_filename)}.mp4"
+    else:
+        mp4_filename = args.mp4_filename
+    
     # read svg-file (change path for you own svg-file)
-    handler = SVG_Handler("images/weih_f6.svg")
+    handler = SVG_Handler(args.svg_filename)
     
     
-    save_video = True # true to save animation as a video (might take some time)
-    only_fourier_calc = False # will not take into account the animation --> way faster if you just want for example the desmos equation
-    simple_plot = False # true to not calculate the animation (for "fast" testing)
-    plot_reverse = True # animates the picture in reverse (for example if you have a text)
+    save_video = args.save_video
+    only_fourier_calc = args.calculate_only
+    simple_plot = args.simple_plot
+    plot_reverse = args.plot_reverse
     
     
-    fourier_N = 160 # number of fourier coefficients, will calculate from k=-N up to k=N.
+    fourier_N = args.fourier_coefficients # number of fourier coefficients, will calculate from k=-N up to k=N.
                     # In the old version, to many coefficients would have needed much more time.
                     # However, this is not as drastic since 04/15/2022, because the runtime has been improved a lot (explained in GitHub).
     
@@ -136,10 +213,9 @@ def main():
     print("Calculation of fourier coefficients done.")
     
     # outputs the latex/desmos code (comment out if you don't want it)
-    #print("\n" + get_fourier_latex(coeff, ind) + "\n")
-    #print("\n" + get_desmos_string(coeff, ind) + "\n")
-        
-    
+    for f in args.coefficients_output:
+        print("\n" + code_output[f](coeff, ind) + "\n")
+
     if not only_fourier_calc:
         ### get the data of the fourier graph ###
         fourier_evaluated = fourier_eval(ind, coeff, t_eval, period=T[1]-T[0])
@@ -171,7 +247,7 @@ def main():
             print("Begin saving the video.")
             Writer = animation.writers['ffmpeg']
             writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=30000)
-            anim.save('test.mp4', writer=writer)
+            anim.save(mp4_filename, writer=writer)
             print("Done.")
         
 
