@@ -5,7 +5,40 @@ Some example videos of the animations can be found under [example_animations](ht
 
 # How to use the program
 You will need the packages `numpy`, `matplotlib.pyplot`, `matplotlib.animation`, `svgpathtools` and `scipy.optimize`. 
-The important settings can be done in the `main` function (file `FourierMain.py`) using the different variables (shortly explained in the code). If you want to read your own image, change the path for the SVG handler, for example `handler = SVG_Handler("images/img13.svg")`. Here `images/img13.svg` is the path relative to the `FourierMain.py` file.
+
+The most important settings are available via command line arguments:
+```bash
+usage: FourierMain.py [-h] [--fourier-coefficients FOURIER_COEFFICIENTS] [--save-video] [--calculate-only] [--simple-plot] [--plot-reverse]
+                      [--coefficients-output {latex-coefficients,desmos-formula,latex-formula}] [--mp4-filename MP4_FILENAME]
+                      svg_filename
+
+positional arguments:
+  svg_filename          Name of the SVG file
+
+options:
+  -h, --help            show this help message and exit
+  --fourier-coefficients FOURIER_COEFFICIENTS, -n FOURIER_COEFFICIENTS
+                        Number of fourier coefficients, will calculate from k=-N up to k=N.
+  --save-video, -v      if provided, save animation as a video (might take some time)
+  --calculate-only, -c  Do not show the animation. This is way faster if you just want for example the desmos equation
+  --simple-plot, -s     Do not calculate the animation (for 'fast' testing)
+  --plot-reverse, -r    Animates the picture in reverse (for example if you have a text)
+  --coefficients-output {latex-coefficients,desmos-formula,latex-formula}
+                        Output coefficients or formula in provided format to stdandard output. Can be privided multiple times.
+  --mp4-filename MP4_FILENAME
+                        Filname for generated animation (if -v is provided). Defaults to input filename with .mp4 appended.
+```
+
+####Example
+`python FourierMain.py -n 120 images/img4.svg`
+
+This will start a nice animation for `img4.svg`. If you are not interested in the animation, you can provide the `-s` flag, which outputs only the finalized image.
+
+You can even create output in different formats (coefficients or formula in LaTeX, Desmos formula), using the `--coefficients-output` flag.
+
+#### Other settings
+
+Several other settings can be adjusted in the `main` function (file `FourierMain.py`) using the different variables (shortly explained in the code). 
 
 # How to create a usable SVG file
 I used [Inkscape](https://inkscape.org/de/) to draw the images. I tested the program with the freehand pen (the result of which can be seen [here](https://www.reddit.com/r/mathmemes/comments/rjvakh/merry_christmas_from_a_complex_fourier_series/), for example) and the Bézier tool. Since the Fourier series at discontinuity points is only (mostly) point convergent and no longer uniformly convergent, one should try to start the new path as close as possible to the end of the old path in the case of several lines. For the same reason, the start and end points of the complete image should be close together.
