@@ -52,7 +52,9 @@ $$c_k = \int_0^1 \gamma(t) \cdot e^{2\pi i k \cdot t} \,\text{d}t \quad \text{.}
 Calculating this integral for $N$ coefficients ($k = -N,..., N$), the Fourier series is 
 $$f_N(x) = \sum_{-N}^N c_k e^{2\pi i k t}\quad\text{,}$$
 which approximates the path of the SVG file. Based on the representation of the curves in the `svgpathtools` library, the image is now described by the two dimensional path 
+
 $$g(t) = \left(\begin{array}{l} \text{Re}(f_N(t)) \\ -\text{Im}(f_N(t)) \end{array}\right)$$ 
+
 for $t\in [0, 1]$.
 
 
